@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rviz-pose-tool</name>
+  <name>rviz_pose_tool</name>
   <version>0.1.0</version>
   <description>Improved tool to set a 2D pose estimate in rviz</description>
 
@@ -17,5 +17,9 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+
+  <export>
+    <rviz plugin="${prefix}/pose_tool_description.xml"/>
+  </export>
 
 </package>
