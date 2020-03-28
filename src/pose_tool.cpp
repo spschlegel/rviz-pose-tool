@@ -31,7 +31,7 @@ PoseTool::~PoseTool()
 // At this point the tool has not been activated yet.
 void PoseTool::onInitialize()
 {
-  
+
 }
 
 // activate() is called when the tool is started by the user, either
