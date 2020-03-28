@@ -11,12 +11,16 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED
   COMPONENTS
     roscpp
+    rviz
     #sensor_msgs
 )
 
 ## Find system libraries
-#find_package(Eigen3 REQUIRED)
+find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+set(QT_LIBRARIES Qt5::Widgets)
 #find_package(Boost REQUIRED)
+
+add_definitions(-DQT_NO_KEYWORDS)
 
 ###################################
 ## catkin specific configuration ##
@@ -53,10 +57,19 @@ include_directories(
 #  ${Boost_INCLUDE_DIRS}
 )
 
+QT5_WRAP_CPP(MOC_FILES
+  include/rviz_pose_tool/pose_tool.h
+  OPTIONS -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED -DBOOST_LEXICAL_CAST_INCLUDED 
+)
+
+set(SOURCE_FILES
+  src/pose_tool.cpp
+  ${MOC_FILES} 
+)
 ## Declare a cpp library
-# add_library(${PROJECT_NAME}_core
-#   src/Algorithm.cpp
-#)
+add_library(${PROJECT_NAME}
+   ${SOURCE_FILES}
+)
 
 ## Declare cpp executables
 #add_executable(${PROJECT_NAME}
@@ -73,27 +86,24 @@ include_directories(
 #  ${catkin_EXPORTED_TARGETS}
 #)
 
-## Specify libraries to link executable targets against
-#target_link_libraries(${PROJECT_NAME}_core
- # ${catkin_LIBRARIES}
-#)
-
-#target_link_libraries(${PROJECT_NAME}
+## Set the default path for built libraries to the "lib" directory
+target_link_libraries(${PROJECT_NAME}
 #  ${PROJECT_NAME}_core
-#  ${catkin_LIBRARIES}
-#)
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
 #############
 
 # Mark executables and/or libraries for installation
-#install(
-#  TARGETS ${PROJECT_NAME}
-#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
+install(
+  TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 # Mark cpp header files for installation
 install(
@@ -103,10 +113,10 @@ install(
 )
 
 # Mark other files for installation
-#install(
+install(FILES plugin_description.xml
 #  DIRECTORY doc
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##

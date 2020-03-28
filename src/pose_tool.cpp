@@ -6,7 +6,7 @@
 #include <rviz/geometry.h>
 #include <rviz/properties/vector_property.h>
 
-#include "pose_tool.h"
+#include "rviz_pose_tool/pose_tool.h"
 
 
 namespace rviz_pose_tool
@@ -38,14 +38,7 @@ void PoseTool::onInitialize()
 // by clicking on its button in the toolbar or by pressing its hotkey.
 void PoseTool::activate()
 {
-  if( moving_flag_node_ )
-  {
-    moving_flag_node_->setVisible( true );
 
-    current_flag_property_ = new rviz::VectorProperty( "Flag " + QString::number( flag_nodes_.size() ));
-    current_flag_property_->setReadOnly( true );
-    getPropertyContainer()->addChild( current_flag_property_ );
-  }
 }
 
 // deactivate() is called when the tool is being turned off because
@@ -61,12 +54,13 @@ int PoseTool::processMouseEvent( rviz::ViewportMouseEvent& event )
   Ogre::Plane ground_plane( Ogre::Vector3::UNIT_Z, 0.0f );
   rviz::getPointOnPlaneFromWindowXY( event.viewport,
                                      ground_plane,
-                                     event.x, event.y, intersection )
+                                     event.x, event.y, intersection );
   
   return Render;
 
 }
+
 } // end of namespace
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_pose_tool::PoseTool,rviz::Tool)
+PLUGINLIB_EXPORT_CLASS(rviz_pose_tool::PoseTool, rviz::Tool)

@@ -1,4 +1,4 @@
-<library path="lib/rviz_pose_tool">
+<library path="lib/librviz_pose_tool">
   <class name="rviz_pose_tool/PoseTool"
          type="rviz_pose_tool::PoseTool"
          base_class_type="rviz::Tool">

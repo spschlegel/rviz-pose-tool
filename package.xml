@@ -13,13 +13,19 @@
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>rviz</build_depend>
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>libqt5-core</build_depend>
+  <build_depend>libqt5-widgets</build_depend>
+  <build_depend>tf</build_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
+  <exec_depend>rviz</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 
   <export>
-    <rviz plugin="${prefix}/pose_tool_description.xml"/>
+    <rviz plugin="${prefix}/plugin_description.xml"/>
   </export>
 
 </package>
