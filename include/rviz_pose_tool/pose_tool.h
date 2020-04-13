@@ -19,6 +19,13 @@ public:
   virtual void deactivate();
 
   virtual int processMouseEvent( rviz::ViewportMouseEvent& event );
+
+  visualization_msgs::Marker createLaserMarker();
+  virtual void createRobotMarker();
+  virtual void dragFeedback(visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+
+protected:
+  std::shared_ptr<interactive_markers::InteractiveMarkerServer> server;
 };
 
 }
