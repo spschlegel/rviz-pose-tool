@@ -22,10 +22,18 @@ public:
 
   visualization_msgs::Marker createLaserMarker();
   virtual void createRobotMarker();
-  virtual void dragFeedback(visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  virtual void dragFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  virtual void publishInitialPose(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  virtual void scanCallback(const sensor_msgs::LaserScanConstPtr &laserscan);
 
 protected:
+  ros::NodeHandle nh;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server;
+  visualization_msgs::Marker laserMarker;
+  laser_geometry::LaserProjection laserProjector;
+  tf::TransformListener listener_;
+  ros::Publisher marker_pub;
+  tf::StampedTransform robotCenterBaseLinkTransform_;
 };
 
 }

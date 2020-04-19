@@ -4,7 +4,10 @@
 #include <laser_geometry/laser_geometry.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 #include <std_msgs/ColorRGBA.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 #include <ros/console.h>
 
@@ -47,18 +50,40 @@ PoseTool::~PoseTool()
 // At this point the tool has not been activated yet.
 void PoseTool::onInitialize()
 {
-  ros::NodeHandle n("pose_tool");
+  nh = ros::NodeHandle("pose_tool");
   server = std::make_shared<interactive_markers::InteractiveMarkerServer>("pose_tool");
 
-  // publish server init
+  ROS_INFO("Setting up marker menu handler");
   interactive_markers::MenuHandler menu_handler;
-  ros::Publisher initialPosePub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialPose", 1);
-  // init publisher to initialpose
-  // init tf Transfromlistener
-  // init tf Transformbroadcaster
-  // init laser geometry laserprojecction
-  // init marker publisher
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  menu_handler.insert("Done", &publishInitialPose);
+
+  ROS_INFO("Setting up publisher to /initialpose");
+  ros::Publisher initialPosePub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialPose", 1);
+
+  ROS_INFO("Initializing transform between robot_center and base_link");
+  try
+  {
+    listener_.waitForTransform("robot_center", "base_link", ros::Time(0), ros::Duration(5));
+    listener_.lookupTransform("robot_center", "base_link", ros::Time(0), robotCenterBaseLinkTransform_);
+  }
+  catch(const tf::LookupException)
+  {
+    ROS_ERROR("Transform from robot_center to base_link not available!");
+  }
+  
+  ROS_INFO("Broadcasting inital transform between robot_center and base_link");
+  tf::TransformBroadcaster broadcaster_;
+  try
+  {
+    broadcaster_.sendTransform(robotCenterBaseLinkTransform_);
+  }
+  catch(const std::exception& e)
+  {
+   ROS_ERROR("Could not send initial transform for robot_marker");
+  }
+    
+  ROS_INFO("Setting up publisher to /laser_marker");
+  marker_pub = nh.advertise<visualization_msgs::Marker>("pose_tool/laser_marker", 1);
 }
 
 // activate() is called when the tool is started by the user, either
@@ -67,7 +92,8 @@ void PoseTool::activate()
 {
   createRobotMarker();
   createLaserMarker();
-  // subscribe to laser scan(s)
+  ROS_INFO("Setting up laser scan subscriber");
+  ros::Subscriber sub = nh.subscribe("laserscan", 1, &PoseTool::scanCallback, this);
 }
 
 // deactivate() is called when the tool is being turned off because
@@ -89,9 +115,41 @@ int PoseTool::processMouseEvent( rviz::ViewportMouseEvent& event )
 
 }
 
+void PoseTool::scanCallback(const sensor_msgs::LaserScanConstPtr& laserscan)
+{
+  laserMarker.points.clear();
+
+  sensor_msgs::LaserScan laserScan = *laserscan;
+  
+  sensor_msgs::PointCloud2 pointCloudMsg;
+  laserProjector.projectLaser(laserScan, pointCloudMsg);
+  
+  for (sensor_msgs::PointCloud2Iterator<float> it(pointCloudMsg, "scanPoint"); it != it.end(); ++it) {
+    geometry_msgs::PointStamped pointStamped;
+    geometry_msgs::Point point;
+    point.x = it[0];
+    point.x = it[1];
+    point.x = it[2];
+    pointStamped.point = point;
+    pointStamped.header.frame_id = laserScan.header.frame_id;
+    geometry_msgs::PointStamped transformedStampedPoint;
+    listener_.transformPoint("base_link", pointStamped, transformedStampedPoint);
+    geometry_msgs::Point transformedPoint;
+    transformedPoint.x = transformedStampedPoint.point.x - robotCenterBaseLinkTransform_.getOrigin().x;
+    transformedPoint.y = transformedStampedPoint.point.y - robotCenterBaseLinkTransform_.getOrigin().y;
+    transformedPoint.z = transformedStampedPoint.point.z; 
+    laserMarker.points.push_back(transformedPoint);
+  }
+  try
+  {
+    marker_pub.publish(laserMarker);
+  }
+  catch(const std::exception& e){}  
+}
+
 visualization_msgs::Marker PoseTool::createLaserMarker()
 {
-  visualization_msgs::Marker laserMarker;
+  ROS_INFO("Creating laser marker");
   laserMarker.type = visualization_msgs::Marker::POINTS;
   laserMarker.scale.x = 0.02;
   laserMarker.scale.y = 0.02;
@@ -108,6 +166,7 @@ visualization_msgs::Marker PoseTool::createLaserMarker()
 
 void PoseTool::createRobotMarker()
 {
+  ROS_INFO("Creating robot marker");
   visualization_msgs::InteractiveMarker int_marker;
   int_marker.header.frame_id = "base_link";
   int_marker.name = "robot_marker";
@@ -185,10 +244,16 @@ void PoseTool::createRobotMarker()
   server->applyChanges();
 }
 
-void PoseTool::dragFeedback(visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+void PoseTool::dragFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 {
   // marker = interactivemarkerserver.get(feedback.marker_name)
   // broadcaster.sendTransform(trans, rot, time, roboter marker, base link)
+  server->applyChanges(); //?
+}
+
+void PoseTool::publishInitialPose(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+{
+  server->applyChanges();
 }
 
 } // end of namespace
